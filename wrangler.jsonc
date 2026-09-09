@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "channel-lab",
+  "main": "worker.js",
+  "account_id": "7fd560a7090967ba15434f96a9e2a775",
+  "compatibility_date": "2026-09-09",
+  "workers_dev": true,
+  "preview_urls": false,
+  "rules": [
+    { "type": "Text", "globs": ["**/*.html"], "fallthrough": true }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://moeacgx.github.io,null"
+  },
+  "observability": {
+    "enabled": false
+  }
+}

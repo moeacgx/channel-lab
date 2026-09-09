@@ -4,17 +4,17 @@
 :root{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d9e7e2;background:#101918;--line:#29413d;--muted:#86a29a;--accent:#e6bd73}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#1b3c35 0,transparent 35%),#101918}main{width:min(1180px,94vw);margin:0 auto;padding:34px 0 50px}header{display:flex;justify-content:space-between;align-items:end;border-bottom:1px solid var(--line);padding-bottom:20px}h1{margin:0;font:600 clamp(26px,4vw,46px) Georgia,serif;letter-spacing:-1px}header p{margin:8px 0 0;color:var(--muted);font:13px system-ui}header b{color:var(--accent);font-size:12px;letter-spacing:2px}.grid{display:grid;grid-template-columns:390px 1fr;gap:18px;margin-top:20px}.card{border:1px solid var(--line);background:#142320cc;border-radius:10px;padding:18px;box-shadow:0 12px 35px #0003}.card h2{margin:0 0 16px;font-size:13px;color:var(--accent);letter-spacing:2px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin-bottom:13px}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:6px}input,select,textarea{width:100%;border:1px solid #35534c;background:#0d1716;color:#e8f2ed;border-radius:5px;padding:10px;font:12px inherit;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{min-height:245px;resize:vertical;line-height:1.55}.actions{display:flex;gap:8px;align-items:center;margin-top:14px}button{border:1px solid var(--accent);background:var(--accent);color:#19221d;border-radius:5px;padding:10px 16px;font:600 12px inherit;cursor:pointer}button.secondary{background:transparent;color:var(--accent);border-color:var(--line)}button:disabled{opacity:.5;cursor:wait}.hint{font-size:11px;color:var(--muted);line-height:1.5}.result-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.status{font-size:11px;color:var(--muted)}.status.ok{color:#9fd39b}.status.bad{color:#e89583}.meta{display:flex;gap:16px;margin:12px 0;color:var(--muted);font-size:11px}.meta strong{color:#e8f2ed;font-weight:400}.log{background:#0b1211;border:1px solid var(--line);border-radius:5px;padding:13px;min-height:290px;max-height:480px;overflow:auto;white-space:pre-wrap;word-break:break-word;color:#c9d7d1;font-size:12px;line-height:1.5}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{border:1px solid var(--line);border-radius:20px;padding:6px 9px;color:var(--muted);font-size:10px;cursor:pointer}.chip:hover{border-color:var(--accent);color:var(--accent)}@media(max-width:800px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr 1fr}}
 </style></head>
 
-<body><main><header><div><h1>Channel Lab</h1><p>配置可保存在浏览器 · 令牌仅保留在当前页面</p></div><b>STREAM / 02</b></header>
+<body><main><header><div><h1>Channel Lab</h1><p>Cloudflare Worker 代理 · 配置保存在浏览器，令牌不保存</p></div><b>PROXY / 03</b></header>
 <section class="grid"><div class="card"><h2>请求设置</h2>
 <div class="field"><label for="channel">渠道名称</label><input id="channel" placeholder="临时测试渠道"></div>
 <div class="field"><label for="url">基础接口地址</label><input id="url" value="https://maolaoapi.com"></div>
 <div class="field"><label for="endpoint">请求接口（自动补全路径）</label><select id="endpoint"><option value="/v1/chat/completions">Chat Completions · 聊天补全</option><option value="/v1/responses">Responses · 响应</option></select></div>
 <div class="field"><label for="model">测试模型</label><input id="model" value="gpt-6-astra" placeholder="输入要测试的模型名称"></div>
-<div class="field"><label for="token">令牌（不保存）</label><input id="token" type="password" autocomplete="off" placeholder="sk-..."></div>
+<div class="field"><label for="token">渠道令牌（经 Worker 转发，不保存）</label><input id="token" type="password" autocomplete="off" placeholder="sk-..."></div>
 <div class="field"><label for="body">请求体 JSON（模型和流式开关实时同步）</label><textarea id="body" spellcheck="false"></textarea></div>
 <div class="field"><label for="stream"><input id="stream" checked type="checkbox" style="width:auto"> 流式输出</label></div>
 <div class="actions" style="flex-wrap:wrap"><button id="send" type="button">发送请求</button><button class="secondary" id="stop" type="button" disabled>停止</button><button class="secondary" id="clear" type="button">清空结果</button><button class="secondary" id="save" type="button">保存配置</button><button class="secondary" id="load" type="button">读取配置</button></div>
-<p class="hint">响应和代码随接收更新，生成完成后自动加载 HTML 预览。静态页面直连渠道，接口需允许浏览器跨域请求。</p></div>
+<p class="hint">请求经 Cloudflare Worker 转发，无需渠道开放浏览器跨域。响应和代码实时更新，生成完成后加载 HTML 预览。渠道地址需使用 HTTPS。</p></div>
 <div class="card" style="min-width:0"><div class="result-head"><h2>响应结果</h2><span id="status" class="status" role="status">等待请求</span></div>
 <div class="meta" style="flex-wrap:wrap"><span>渠道：<strong id="m-channel">—</strong></span><span>状态：<strong id="m-code">—</strong></span><span>耗时：<strong id="m-time">—</strong></span><span>已收：<strong id="m-size">0 B</strong></span></div>
 <div class="tabs" style="display:flex;gap:8px;margin-bottom:12px"><button class="secondary tab" data-tab="log" type="button">响应</button><button class="secondary tab" data-tab="code" type="button">HTML 代码</button><button class="secondary tab" data-tab="preview" type="button">预览</button></div>
@@ -26,6 +26,7 @@
 const $ = id => document.getElementById(id);
 const DEFAULT_PROMPT = '创建一个html 内容是svg 绘制一个鹈鹕骑自行车的2d动画 不要做任何测试 直接给我画';
 const CONFIG_KEY = 'channel-lab-config';
+const WORKER_ORIGIN = 'https://channel-lab.muabl.workers.dev';
 const configKeys = ['channel', 'url', 'endpoint', 'model', 'body'];
 let controller = null;
 let resultText = '';
@@ -96,7 +97,7 @@ function switchEndpoint() {
 }
 function requestURL() {
   const address = new URL($('url').value.trim());
-  if (!['https:', 'http:'].includes(address.protocol)) throw new Error('接口地址必须以 https:// 或 http:// 开头');
+  if (address.protocol !== 'https:') throw new Error('代理模式下，渠道接口地址必须以 https:// 开头');
   if (address.username || address.password) throw new Error('请将令牌填在令牌输入框');
   // 兼容粘贴完整接口地址，保留渠道的自定义前缀。
   const prefix = address.pathname.replace(/\/+$/, '').replace(/\/(?:v1(?:\/(?:chat\/completions|responses|models))?|chat\/completions|responses|models)$/, '');
@@ -104,6 +105,12 @@ function requestURL() {
   address.search = '';
   address.hash = '';
   return address.href;
+}
+function proxyURL() {
+  // Worker 页面使用同源代理，GitHub Pages 和本地 HTML 使用已部署的 Worker。
+  const isLocalWorker = ['localhost', '127.0.0.1'].includes(location.hostname);
+  const origin = isLocalWorker || location.origin === WORKER_ORIGIN ? location.origin : WORKER_ORIGIN;
+  return origin + '/api/proxy';
 }
 function saveConfig() {
   try {
@@ -231,12 +238,13 @@ async function send() {
   try {
     payload = syncBody();
     if (!payload.model) throw new Error('请先填写测试模型');
+    if (!$('token').value.trim()) throw new Error('请先填写渠道令牌');
     url = requestURL();
   } catch (error) { status(error.message, 'bad'); return; }
   resultText = ''; reasoningText = ''; responseRaw = '';
   $('code').textContent = ''; $('raw').textContent = '';
   $('preview').srcdoc = '';
-  $('log').textContent = '请求已发送，等待服务端响应…';
+  $('log').textContent = '请求已发送到 Worker，等待渠道响应…';
   $('m-code').textContent = '等待响应';
   $('m-channel').textContent = $('channel').value || '未命名';
   $('m-size').textContent = '0 B';
@@ -259,8 +267,8 @@ async function send() {
     resetTimeout();
     const headers = {'Content-Type': 'application/json', 'Accept': payload.stream ? 'text/event-stream, application/json' : 'application/json'};
     if ($('token').value.trim()) headers.Authorization = 'Bearer ' + $('token').value.trim();
-    const response = await fetch(url, {
-      method: 'POST', headers, body: JSON.stringify(payload), signal, credentials: 'omit', cache: 'no-store'
+    const response = await fetch(proxyURL(), {
+      method: 'POST', headers, body: JSON.stringify({url, payload}), signal, credentials: 'omit', cache: 'no-store'
     });
     $('m-code').textContent = response.status + ' ' + response.statusText;
     if (!response.body) throw new Error('浏览器未提供响应读取流');
@@ -350,7 +358,7 @@ async function send() {
     $('log').textContent = (resultText || reasoningText || '') + '\n\n' + message;
     status(signal.aborted ? message : '请求失败：' + message, 'bad');
     if (bytes === 0 && !signal.aborted && error instanceof TypeError) {
-      $('log').textContent += '\n浏览器未能访问接口，请检查地址、网络与服务端跨域设置。';
+      $('log').textContent += '\n浏览器未能连接 Worker 代理，请检查当前网络是否能访问 ' + WORKER_ORIGIN + '。';
     }
     if (!signal.aborted) controller.abort();
   } finally {
