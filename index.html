@@ -1,0 +1,407 @@
+﻿<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Channel Lab · 临时接口测试台</title>
+<style>
+:root{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d9e7e2;background:#101918;--line:#29413d;--muted:#86a29a;--accent:#e6bd73}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#1b3c35 0,transparent 35%),#101918}main{width:min(1180px,94vw);margin:0 auto;padding:34px 0 50px}header{display:flex;justify-content:space-between;align-items:end;border-bottom:1px solid var(--line);padding-bottom:20px}h1{margin:0;font:600 clamp(26px,4vw,46px) Georgia,serif;letter-spacing:-1px}header p{margin:8px 0 0;color:var(--muted);font:13px system-ui}header b{color:var(--accent);font-size:12px;letter-spacing:2px}.grid{display:grid;grid-template-columns:390px 1fr;gap:18px;margin-top:20px}.card{border:1px solid var(--line);background:#142320cc;border-radius:10px;padding:18px;box-shadow:0 12px 35px #0003}.card h2{margin:0 0 16px;font-size:13px;color:var(--accent);letter-spacing:2px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin-bottom:13px}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:6px}input,select,textarea{width:100%;border:1px solid #35534c;background:#0d1716;color:#e8f2ed;border-radius:5px;padding:10px;font:12px inherit;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{min-height:245px;resize:vertical;line-height:1.55}.actions{display:flex;gap:8px;align-items:center;margin-top:14px}button{border:1px solid var(--accent);background:var(--accent);color:#19221d;border-radius:5px;padding:10px 16px;font:600 12px inherit;cursor:pointer}button.secondary{background:transparent;color:var(--accent);border-color:var(--line)}button:disabled{opacity:.5;cursor:wait}.hint{font-size:11px;color:var(--muted);line-height:1.5}.result-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.status{font-size:11px;color:var(--muted)}.status.ok{color:#9fd39b}.status.bad{color:#e89583}.meta{display:flex;gap:16px;margin:12px 0;color:var(--muted);font-size:11px}.meta strong{color:#e8f2ed;font-weight:400}.log{background:#0b1211;border:1px solid var(--line);border-radius:5px;padding:13px;min-height:290px;max-height:480px;overflow:auto;white-space:pre-wrap;word-break:break-word;color:#c9d7d1;font-size:12px;line-height:1.5}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{border:1px solid var(--line);border-radius:20px;padding:6px 9px;color:var(--muted);font-size:10px;cursor:pointer}.chip:hover{border-color:var(--accent);color:var(--accent)}@media(max-width:800px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr 1fr}}
+</style></head>
+
+<body><main><header><div><h1>Channel Lab</h1><p>配置可保存在浏览器 · 令牌仅保留在当前页面</p></div><b>STREAM / 02</b></header>
+<section class="grid"><div class="card"><h2>请求设置</h2>
+<div class="field"><label for="channel">渠道名称</label><input id="channel" placeholder="临时测试渠道"></div>
+<div class="field"><label for="url">基础接口地址</label><input id="url" value="https://maolaoapi.com"></div>
+<div class="field"><label for="endpoint">请求接口（自动补全路径）</label><select id="endpoint"><option value="/v1/chat/completions">Chat Completions · 聊天补全</option><option value="/v1/responses">Responses · 响应</option></select></div>
+<div class="field"><label for="model">测试模型</label><input id="model" placeholder="输入要测试的模型名称"></div>
+<div class="field"><label for="token">令牌（不保存）</label><input id="token" type="password" autocomplete="off" placeholder="sk-..."></div>
+<div class="field"><label for="body">请求体 JSON（模型和流式开关实时同步）</label><textarea id="body" spellcheck="false"></textarea></div>
+<div class="field"><label for="stream"><input id="stream" checked type="checkbox" style="width:auto"> 流式输出</label></div>
+<div class="actions" style="flex-wrap:wrap"><button id="send" type="button">发送请求</button><button class="secondary" id="stop" type="button" disabled>停止</button><button class="secondary" id="clear" type="button">清空结果</button><button class="secondary" id="save" type="button">保存配置</button><button class="secondary" id="load" type="button">读取配置</button></div>
+<p class="hint">响应和代码随接收更新，生成完成后自动加载 HTML 预览。静态页面直连渠道，接口需允许浏览器跨域请求。</p></div>
+<div class="card" style="min-width:0"><div class="result-head"><h2>响应结果</h2><span id="status" class="status" role="status">等待请求</span></div>
+<div class="meta" style="flex-wrap:wrap"><span>渠道：<strong id="m-channel">—</strong></span><span>状态：<strong id="m-code">—</strong></span><span>耗时：<strong id="m-time">—</strong></span><span>已收：<strong id="m-size">0 B</strong></span></div>
+<div class="tabs" style="display:flex;gap:8px;margin-bottom:12px"><button class="secondary tab" data-tab="log" type="button">响应</button><button class="secondary tab" data-tab="code" type="button">HTML 代码</button><button class="secondary tab" data-tab="preview" type="button">预览</button></div>
+<div id="log" class="log">等待发送请求…</div><pre id="code" class="log" style="display:none"></pre><iframe id="preview" title="生成的 HTML 预览" sandbox="allow-scripts" referrerpolicy="no-referrer" style="display:none;width:100%;height:520px;border:1px solid var(--line);border-radius:5px;background:#fff"></iframe>
+<details style="margin-top:14px"><summary class="hint">原始响应 / SSE 事件</summary><pre id="raw" class="log" style="min-height:80px"></pre></details>
+</div></section></main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const DEFAULT_PROMPT = '创建一个html 内容是svg 绘制一个鹈鹕骑自行车的2d动画 不要做任何测试 直接给我画';
+const CONFIG_KEY = 'channel-lab-config';
+const configKeys = ['channel', 'url', 'endpoint', 'model', 'body'];
+let controller = null;
+let resultText = '';
+let reasoningText = '';
+let responseRaw = '';
+let paintTimer = null;
+let previousEndpoint = $('endpoint').value;
+
+function status(message, kind = '') {
+  $('status').textContent = message;
+  $('status').className = 'status ' + kind;
+}
+function showTab(id) {
+  ['log', 'code', 'preview'].forEach(name => { $(name).style.display = name === id ? 'block' : 'none'; });
+  document.querySelectorAll('.tab').forEach(button => {
+    const active = button.dataset.tab === id;
+    button.setAttribute('aria-pressed', String(active));
+    button.style.borderColor = active ? 'var(--accent)' : 'var(--line)';
+  });
+}
+function parseBody() {
+  const payload = JSON.parse($('body').value);
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('请求体必须是 JSON 对象');
+  return payload;
+}
+function defaultBody() {
+  return {
+    model: $('model').value.trim(),
+    messages: [{role: 'user', content: DEFAULT_PROMPT}],
+    stream: $('stream').checked
+  };
+}
+// 控件为发送参数的最终来源，编辑时同步、发送前再次覆盖。
+function syncBody() {
+  const payload = parseBody();
+  payload.model = $('model').value.trim();
+  payload.stream = $('stream').checked;
+  $('body').value = JSON.stringify(payload, null, 2);
+  return payload;
+}
+function syncControls() {
+  try { syncBody(); }
+  catch (error) { status('请修正请求体 JSON：' + error.message, 'bad'); }
+}
+function switchEndpoint() {
+  try {
+    const payload = parseBody();
+    if ($('endpoint').value === '/v1/responses') {
+      if (payload.input === undefined) payload.input = payload.messages || DEFAULT_PROMPT;
+      delete payload.messages;
+    } else {
+      if (!payload.messages) {
+        if (typeof payload.input === 'string') payload.messages = [{role: 'user', content: payload.input}];
+        else if (Array.isArray(payload.input)) payload.messages = payload.input;
+        else payload.messages = [{role: 'user', content: DEFAULT_PROMPT}];
+      }
+      delete payload.input;
+    }
+    $('body').value = JSON.stringify(payload, null, 2);
+    syncBody();
+    previousEndpoint = $('endpoint').value;
+    return true;
+  } catch (error) {
+    $('endpoint').value = previousEndpoint;
+    status('切换接口前请修正请求体：' + error.message, 'bad');
+    return false;
+  }
+}
+function requestURL() {
+  const address = new URL($('url').value.trim());
+  if (!['https:', 'http:'].includes(address.protocol)) throw new Error('接口地址必须以 https:// 或 http:// 开头');
+  if (address.username || address.password) throw new Error('请将令牌填在令牌输入框');
+  // 兼容粘贴完整接口地址，保留渠道的自定义前缀。
+  const prefix = address.pathname.replace(/\/+$/, '').replace(/\/(?:v1(?:\/(?:chat\/completions|responses|models))?|chat\/completions|responses|models)$/, '');
+  address.pathname = prefix + $('endpoint').value;
+  address.search = '';
+  address.hash = '';
+  return address.href;
+}
+function saveConfig() {
+  try {
+    syncBody();
+    const config = Object.fromEntries(configKeys.map(key => [key, $(key).value]));
+    config.stream = $('stream').checked;
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    status('配置已保存（不含令牌）', 'ok');
+  } catch (error) { status('保存失败：' + error.message, 'bad'); }
+}
+function loadConfig(silent = false) {
+  try {
+    const saved = localStorage.getItem(CONFIG_KEY);
+    if (!saved) { if (!silent) status('浏览器中还没有保存的配置'); return; }
+    const config = JSON.parse(saved);
+    if (!config || typeof config !== 'object') throw new Error('配置格式无效');
+    configKeys.forEach(key => {
+      if (typeof config[key] === 'string' && key !== 'endpoint') $(key).value = config[key];
+    });
+    $('endpoint').value = config.endpoint === '/v1/responses' ? '/v1/responses' : '/v1/chat/completions';
+    $('stream').checked = typeof config.stream === 'boolean' ? config.stream : true;
+    previousEndpoint = $('endpoint').value;
+    if (!switchEndpoint()) return;
+    if (!silent) status('配置已读取', 'ok');
+  } catch (error) { status('读取配置失败：' + error.message, 'bad'); }
+}
+function htmlCode(text) {
+  const fence = text.match(/~~~(?:html|svg)?\s*\n([\s\S]*?)(?:~~~|$)/i)
+    || text.match(/\x60{3}(?:html|svg)?\s*\n([\s\S]*?)(?:\x60{3}|$)/i);
+  let code = (fence ? fence[1] : text).trim();
+  const begin = code.search(/<!doctype\s+html|<html\b|<svg\b/i);
+  if (begin >= 0) code = code.slice(begin);
+  const ending = /<html\b|<!doctype\s+html/i.test(code) ? /<\/html\s*>/i.exec(code) : /<\/svg\s*>/i.exec(code);
+  if (ending) code = code.slice(0, ending.index + ending[0].length);
+  return code;
+}
+function paint() {
+  clearTimeout(paintTimer);
+  paintTimer = null;
+  const display = resultText || (reasoningText ? '模型思考中：\n' + reasoningText : '已连接，等待模型内容…');
+  const nearBottom = $('log').scrollHeight - $('log').scrollTop - $('log').clientHeight < 80;
+  $('log').textContent = display;
+  $('code').textContent = htmlCode(resultText);
+  $('raw').textContent = responseRaw;
+  if (nearBottom) $('log').scrollTop = $('log').scrollHeight;
+}
+function schedulePaint() {
+  if (paintTimer === null) paintTimer = setTimeout(paint, 40);
+}
+function refreshPreview() {
+  const code = htmlCode(resultText);
+  if (!code) return;
+  // 隔离模型生成的脚本，不能访问测试台的令牌、存储或父页面。
+  const policy = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; font-src data:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'">';
+  const markup = code.replace(/^\s*<!doctype[^>]*>/i, '');
+  if (/<head(?:\s[^>]*)?>/i.test(markup)) {
+    $('preview').srcdoc = '<!doctype html>' + markup.replace(/<head(?:\s[^>]*)?>/i, opening => opening + policy);
+  } else if (/<html(?:\s[^>]*)?>/i.test(markup)) {
+    $('preview').srcdoc = '<!doctype html>' + markup.replace(/<html(?:\s[^>]*)?>/i, opening => opening + '<head>' + policy + '</head>');
+  } else {
+    $('preview').srcdoc = '<!doctype html><html><head>' + policy + '</head><body>' + markup + '</body></html>';
+  }
+}
+function errorMessage(value) {
+  if (typeof value === 'string') return value;
+  return value?.message || JSON.stringify(value) || '未知错误';
+}
+function contentText(content) {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content.map(part => typeof part === 'string' ? part : (part.text || part.refusal || '')).join('');
+}
+function fullText(data) {
+  return contentText(data.choices?.[0]?.message?.content)
+    || data.choices?.[0]?.message?.refusal
+    || data.output_text
+    || (Array.isArray(data.output) ? data.output.map(item => contentText(item.content)).join('') : '')
+    || '';
+}
+// SSE 事件可能跨网络分块，按行缓存并按空行分派；不能逐块直接 JSON.parse。
+function createSSEParser(onEvent) {
+  let buffer = '', eventName = '', dataLines = [];
+  function dispatch() {
+    if (dataLines.length) onEvent(dataLines.join('\n'), eventName);
+    dataLines = [];
+    eventName = '';
+  }
+  function line(value) {
+    if (value === '') { dispatch(); return; }
+    if (value.startsWith(':')) return;
+    const colon = value.indexOf(':');
+    const field = colon < 0 ? value : value.slice(0, colon);
+    let content = colon < 0 ? '' : value.slice(colon + 1);
+    if (content.startsWith(' ')) content = content.slice(1);
+    if (field === 'data') dataLines.push(content);
+    if (field === 'event') eventName = content;
+  }
+  return (chunk, final = false) => {
+    buffer += chunk;
+    while (true) {
+      const match = /[\r\n]/.exec(buffer);
+      if (!match) break;
+      const index = match.index;
+      if (buffer[index] === '\r' && index === buffer.length - 1 && !final) break;
+      const width = buffer[index] === '\r' && buffer[index + 1] === '\n' ? 2 : 1;
+      line(buffer.slice(0, index));
+      buffer = buffer.slice(index + width);
+    }
+    if (final) {
+      if (buffer) line(buffer);
+      buffer = '';
+      dispatch();
+    }
+  };
+}
+function busy(value) {
+  ['send', 'clear', 'save', 'load', 'channel', 'url', 'endpoint', 'model', 'token', 'body', 'stream'].forEach(id => { $(id).disabled = value; });
+  $('stop').disabled = !value;
+  $('send').textContent = value ? '接收中…' : '发送请求';
+}
+async function send() {
+  if (controller) return;
+  let payload, url;
+  try {
+    payload = syncBody();
+    if (!payload.model) throw new Error('请先填写测试模型');
+    url = requestURL();
+  } catch (error) { status(error.message, 'bad'); return; }
+  resultText = ''; reasoningText = ''; responseRaw = '';
+  $('code').textContent = ''; $('raw').textContent = '';
+  $('preview').srcdoc = '';
+  $('log').textContent = '请求已发送，等待服务端响应…';
+  $('m-code').textContent = '等待响应';
+  $('m-channel').textContent = $('channel').value || '未命名';
+  $('m-size').textContent = '0 B';
+  showTab('log');
+  status('连接中…');
+  busy(true);
+  controller = new AbortController();
+  const signal = controller.signal;
+  const start = performance.now();
+  let idleTimeout;
+  const resetTimeout = () => {
+    clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(() => controller?.abort(new Error('等待响应超过 120 秒，已停止')), 120000);
+  };
+  const tick = () => { $('m-time').textContent = ((performance.now() - start) / 1000).toFixed(1) + ' s'; };
+  tick();
+  const timer = setInterval(tick, 100);
+  let bytes = 0, completed = false, limited = false, isSSE = false;
+  try {
+    resetTimeout();
+    const headers = {'Content-Type': 'application/json', 'Accept': payload.stream ? 'text/event-stream, application/json' : 'application/json'};
+    if ($('token').value.trim()) headers.Authorization = 'Bearer ' + $('token').value.trim();
+    const response = await fetch(url, {
+      method: 'POST', headers, body: JSON.stringify(payload), signal, credentials: 'omit', cache: 'no-store'
+    });
+    $('m-code').textContent = response.status + ' ' + response.statusText;
+    if (!response.body) throw new Error('浏览器未提供响应读取流');
+    const contentType = response.headers.get('content-type') || '';
+    let mode = /text\/event-stream/i.test(contentType) ? 'sse' : '';
+    isSSE = mode === 'sse';
+    status(mode === 'sse' ? '已连接，等待首段内容…' : '已连接，正在接收…');
+    const parseEvent = (data, eventName) => {
+      if (completed) return;
+      if (data.trim() === '[DONE]') { completed = true; return; }
+      let event;
+      try { event = JSON.parse(data); }
+      catch { throw new Error('无法解析流式事件，已收到的内容保留在下方原始响应'); }
+      const type = event.type || eventName;
+      if (event.error || type === 'error' || type === 'response.failed') {
+        throw new Error(errorMessage(event.error || event.response?.error || event));
+      }
+      const choice = event.choices?.find(item => item.index === 0) || event.choices?.[0];
+      if (choice) {
+        resultText += contentText(choice.delta?.content) || choice.delta?.refusal || '';
+        reasoningText += contentText(choice.delta?.reasoning_content || choice.delta?.reasoning);
+        if (choice.finish_reason === 'length' || choice.finish_reason === 'content_filter') limited = true;
+      }
+      if (type === 'response.output_text.delta' || type === 'response.refusal.delta') resultText += event.delta || '';
+      if (type === 'response.reasoning_summary_text.delta') reasoningText += event.delta || '';
+      if (type === 'response.completed' || type === 'response.incomplete') {
+        if (!resultText) resultText = fullText(event.response || {});
+        limited = type === 'response.incomplete';
+        completed = true;
+      }
+    };
+    const feed = createSSEParser(parseEvent);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let pending = '';
+    function consume(text, final = false) {
+      responseRaw += text;
+      if (!response.ok) { schedulePaint(); return; }
+      // 对未声明内容类型的兼容渠道，查看正文前缀识别 SSE。
+      if (!mode) {
+        pending += text;
+        const startText = pending.trimStart();
+        if (/^(?:data:|event:|:)/.test(startText)) mode = 'sse';
+        else if (/^[{\[<]/.test(startText) || pending.length > 256 || final) mode = 'json';
+        if (mode) { text = pending; pending = ''; }
+      }
+      if (mode === 'sse') { isSSE = true; feed(text, final); }
+      status(resultText ? '正在生成 · ' + resultText.length + ' 字符' : reasoningText ? '模型思考中…' : '已收到数据，等待模型内容…');
+      schedulePaint();
+    }
+    try {
+      while (true) {
+        const part = await reader.read();
+        if (part.done) { consume(decoder.decode(), true); break; }
+        resetTimeout();
+        bytes += part.value.byteLength;
+        $('m-size').textContent = bytes.toLocaleString() + ' B';
+        consume(decoder.decode(part.value, {stream: true}));
+        if (completed) { await reader.cancel(); break; }
+      }
+    } finally { reader.releaseLock(); }
+    if (!response.ok) {
+      let message = responseRaw;
+      try { const data = JSON.parse(responseRaw); message = errorMessage(data.error || data); } catch {}
+      throw new Error('HTTP ' + response.status + '：' + message.slice(0, 1500));
+    }
+    if (!isSSE) {
+      try {
+        const data = JSON.parse(responseRaw);
+        if (data.error) throw new Error(errorMessage(data.error));
+        resultText = fullText(data) || JSON.stringify(data, null, 2);
+        limited = data.status === 'incomplete' || data.choices?.[0]?.finish_reason === 'length';
+      } catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+        resultText = responseRaw;
+      }
+    }
+    paint();
+    refreshPreview();
+    if (isSSE && !completed) status('连接已结束，未收到结束事件；内容可能不完整', 'bad');
+    else if (limited) status('生成已截断，请检查原始响应', 'bad');
+    else if (!resultText) status('请求结束，未收到正文；请查看原始响应', 'bad');
+    else status(payload.stream && !isSSE ? '完成 · 服务端返回了非流式响应' : '生成完成', 'ok');
+  } catch (error) {
+    const message = signal.aborted ? errorMessage(signal.reason) : error.message;
+    paint();
+    $('log').textContent = (resultText || reasoningText || '') + '\n\n' + message;
+    status(signal.aborted ? message : '请求失败：' + message, 'bad');
+    if (bytes === 0 && !signal.aborted && error instanceof TypeError) {
+      $('log').textContent += '\n浏览器未能访问接口，请检查地址、网络与服务端跨域设置。';
+    }
+    if (!signal.aborted) controller.abort();
+  } finally {
+    clearTimeout(idleTimeout);
+    clearInterval(timer);
+    clearTimeout(paintTimer);
+    paintTimer = null;
+    tick();
+    controller = null;
+    busy(false);
+  }
+}
+$('model').addEventListener('input', syncControls);
+$('model').addEventListener('change', syncControls);
+$('stream').addEventListener('change', syncControls);
+$('endpoint').addEventListener('change', switchEndpoint);
+$('body').addEventListener('input', () => {
+  try {
+    const payload = parseBody();
+    if (typeof payload.model === 'string') $('model').value = payload.model;
+    if (typeof payload.stream === 'boolean') $('stream').checked = payload.stream;
+  } catch { /* 编辑过程中允许暂时不完整的 JSON。 */ }
+});
+document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => showTab(button.dataset.tab)));
+$('send').addEventListener('click', send);
+$('stop').addEventListener('click', () => controller?.abort(new Error('已手动停止，保留已收到的内容')));
+$('save').addEventListener('click', saveConfig);
+$('load').addEventListener('click', () => loadConfig());
+$('clear').addEventListener('click', () => {
+  resultText = ''; reasoningText = ''; responseRaw = '';
+  $('log').textContent = '等待发送请求…';
+  $('code').textContent = ''; $('raw').textContent = ''; $('preview').srcdoc = '';
+  ['m-channel', 'm-code', 'm-time'].forEach(id => { $(id).textContent = '—'; });
+  $('m-size').textContent = '0 B';
+  status('等待请求');
+});
+$('body').value = JSON.stringify(defaultBody(), null, 2);
+showTab('log');
+loadConfig(true);
+</script></body></html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
